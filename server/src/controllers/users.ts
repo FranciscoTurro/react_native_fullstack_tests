@@ -9,7 +9,8 @@ const createJWT = (id: string) => {
 export const usersController = {
   login: async (req: Request, res: Response) => {
     try {
-      const { username, password } = req.query;
+      const { username, password } = req.body;
+      console.log({ username, password });
       if (!username || !password) throw Error('Falta usuario o contraseña');
       if (typeof username !== 'string' || typeof password !== 'string')
         throw Error('Error de longitud');
@@ -21,6 +22,13 @@ export const usersController = {
       if (!passwordMatch) throw Error('Invalid password');
 
       const token = createJWT(user.id.toString());
+
+      console.log({
+        token: token,
+        id: user.id,
+        name: user.username,
+        permission: 'ADMIN',
+      });
 
       res.status(200).send({
         token: token,

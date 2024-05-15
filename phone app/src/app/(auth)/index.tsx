@@ -1,9 +1,9 @@
-import { Text, View } from 'react-native';
+import { View, Text } from 'react-native';
 
 export default function Page() {
   return (
     <View className="flex flex-1">
-      <Text>Wow</Text>
+      <Text>Home authed</Text>
     </View>
   );
 }

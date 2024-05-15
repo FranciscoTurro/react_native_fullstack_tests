@@ -6,14 +6,16 @@ interface AuthProps {
   authState?: { token: string | null; authenticated: boolean | null };
   onLogin?: (username: string, password: string) => Promise<any>;
   onLogout?: () => Promise<any>;
+  isLoading?: boolean;
 }
 
 const TOKEN_KEY = 'jwt';
-export const API_URL = 'localhost:5050/api';
+export const API_URL = 'http://10.0.2.2:5050/api';
 const AuthContext = createContext<AuthProps>({});
 
 export const useAuth = () => {
-  return useContext(AuthContext);
+  const { authState, onLogin, onLogout, isLoading } = useContext(AuthContext);
+  return { authState, onLogin, onLogout, isLoading };
 };
 
 export const AuthProvider = ({ children }: any) => {
@@ -25,8 +27,11 @@ export const AuthProvider = ({ children }: any) => {
     authenticated: null,
   });
 
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
   useEffect(() => {
     const loadToken = async () => {
+      setIsLoading(true);
       const token = await SecureStore.getItemAsync(TOKEN_KEY);
 
       if (token) {
@@ -35,12 +40,19 @@ export const AuthProvider = ({ children }: any) => {
           authenticated: true,
         });
       }
+      setIsLoading(false);
     };
     loadToken();
   }, []);
 
   const login = async (username: string, password: string) => {
     try {
+      setIsLoading(true);
+      console.log(`${API_URL}/users/login`, {
+        username,
+        password,
+      });
+
       const result = await axios.post(`${API_URL}/users/login`, {
         username,
         password,
@@ -57,25 +69,31 @@ export const AuthProvider = ({ children }: any) => {
 
       await SecureStore.setItemAsync(TOKEN_KEY, result.data.token);
 
+      setIsLoading(false);
+
       return result;
     } catch (e) {
+      setIsLoading(false);
       return { error: true, msg: (e as any).response.data.msg };
     }
   };
 
   const logout = async () => {
+    setIsLoading(true);
     await SecureStore.deleteItemAsync(TOKEN_KEY);
     axios.defaults.headers.common['Authorization'] = '';
     setAuthState({
       token: null,
       authenticated: false,
     });
+    setIsLoading(false);
   };
 
   const value = {
     onLogin: login,
     onLogout: logout,
     authState,
+    isLoading,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
